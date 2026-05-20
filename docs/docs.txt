@@ -1,0 +1,1 @@
+Strangler Fig Pattern - https://dennylesmana.medium.com/what-is-the-strangler-fig-pattern-1560443b8459
