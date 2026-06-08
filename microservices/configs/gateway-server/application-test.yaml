@@ -1,0 +1,25 @@
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://test.turkcell.com:8761/eureka/
+
+spring:
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: user-service
+              uri: lb://user-service
+              predicates:
+                - Path=/api/users/**
+            - id: product-service
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/**
+            - id: order-service
+              uri: lb://order-service
+              predicates:
+                - Path=/api/orders/**
