@@ -1,27 +1,9 @@
 spring:
-    application:
-        name: product-service
-    cloud:
-        function:
-            definition: consumeOrderCreatedEvent
-        stream:
-            bindings:
-                testEvent-out-0:
-                    destination: test-topic
-                    content-type: application/json
-                consumeOrderCreatedEvent-in-0:
-                    destination: order-created-topic
-                    group: product-service-group
-            kafka:
-                binder:
-                    brokers: localhost:9092
-    datasource:
-        url: jdbc:postgresql://localhost:5433/products
-        username: postgres
-        password: test12345
-        driver-class-name: org.postgresql.Driver
-    jpa:
-        hibernate:
-            ddl-auto: update
+  application:
+    name: product-service
+  profiles:
+    active: dev
+  config:
+    import: "optional:configserver:http://localhost:8888"
 server:
-    port: 8083
+  port: 8083
