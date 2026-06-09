@@ -4,11 +4,10 @@ import com.turkcell.order_service.dto.CreateOrderRequest;
 import com.turkcell.order_service.service.OrderService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/orders")
+@RequestMapping("/api/orders")
 public class OrderController {
 
     private final OrderService orderService;
