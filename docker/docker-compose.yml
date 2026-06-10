@@ -72,6 +72,21 @@ services:
     # Not: product-db kafka-net'te değil, ama Docker'da
     # container adıyla (product-db) erişim yine de çalışır
     # çünkü aynı docker-compose dosyasındalar
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1
+    container_name: keycloak
+    restart: unless-stopped
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+    ports:
+      - "8085:8080"
+    networks:
+      - kafka-net
   product-db:
     image: postgres:17
     container_name : product-db
