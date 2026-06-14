@@ -6,12 +6,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfToken;
@@ -27,6 +29,8 @@ import java.util.function.Supplier;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private static final String ANGULAR_ORIGIN = "http://localhost:4200";
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
             ClientRegistrationRepository clientRegistrationRepository) throws Exception {
@@ -35,8 +39,21 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 // Authorization Code flow: token'lar HTTP session içinde sunucuda tutulur,
                 // frontend'e yalnızca JSESSIONID cookie'si gider.
-                .oauth2Login(Customizer.withDefaults())
+                .oauth2Login(oauth2 -> oauth2
+                        // Login sonrası her zaman Angular'a yönlendir (saved-request yerine).
+                        .defaultSuccessUrl(ANGULAR_ORIGIN, true))
                 .logout(logout -> logout.logoutSuccessHandler(oidcLogoutSuccessHandler(clientRegistrationRepository)))
+                // JSON isteği yapan Angular'a 302 yerine 401 dön; Angular kendi login
+                // yönlendirmesini /oauth2/authorization/keycloak'a yaparak başlatır.
+                .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
+                    String accept = request.getHeader(HttpHeaders.ACCEPT);
+                    if (accept != null && accept.contains(MediaType.APPLICATION_JSON_VALUE)) {
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    } else {
+                        new LoginUrlAuthenticationEntryPoint("/oauth2/authorization/keycloak")
+                                .commence(request, response, authException);
+                    }
+                }))
                 .csrf(csrf -> csrf
                         // Frontend'in XSRF-TOKEN cookie'sini okuyup X-XSRF-TOKEN header'ı
                         // olarak geri gönderebilmesi için HttpOnly olmamalı.
@@ -53,7 +70,10 @@ public class SecurityConfig {
     private OidcClientInitiatedLogoutSuccessHandler oidcLogoutSuccessHandler(
             ClientRegistrationRepository clientRegistrationRepository) {
         var handler = new OidcClientInitiatedLogoutSuccessHandler(clientRegistrationRepository);
-        handler.setPostLogoutRedirectUri("{baseUrl}");
+        // Keycloak'ın logout sonrası Angular'a yönlendirmesi için.
+        // Keycloak Admin → bff-client → Valid post-logout redirect URIs'e
+        // http://localhost:4200 eklenmesi gerekir.
+        handler.setPostLogoutRedirectUri(ANGULAR_ORIGIN);
         handler.setRedirectStrategy((request, response, url) -> {
             response.setStatus(HttpServletResponse.SC_OK);
             response.setHeader("Location", url);

@@ -1,0 +1,16 @@
+# Angular cache & build
+.angular/
+dist/
+.angular/cache/
+
+# Node modules
+node_modules/
+
+# OS dosyaları
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+*.suo
+*.ntvs*
